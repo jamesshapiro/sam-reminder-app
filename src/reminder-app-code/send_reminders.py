@@ -7,8 +7,11 @@ import os
 import ulid
 
 lam = boto3.client('lambda')
-dynamodb_client = boto3.client('dynamodb')
+sns_client = boto3.client('sns')
+ddb_client = boto3.client('dynamodb')
 table_name = os.environ['REMINDERS_DDB_TABLE']
+topic = os.environ['REMINDERS_TOPIC']
+NUM_ITEMS = 100
 #email_reminder_function = os.environ['EMAIL_REMINDER_FUNCTION']
 #text_reminder_function = os.environ['TEXT_REMINDER_FUNCTION']
 #dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -24,10 +27,10 @@ def alert_is_due(item_ulid):
     print(f'{is_elapsed=}')
     return is_elapsed
 
-def lambda_handler(event, context):
-    response = dynamodb_client.query(
+def get_latest_items(table_name, num_items):
+    return ddb_client.query(
         TableName = table_name,
-        Limit=100,
+        Limit=num_items,
         ScanIndexForward=True,
         KeyConditionExpression='#pk1 = :pk1',
         ExpressionAttributeNames={
@@ -37,33 +40,35 @@ def lambda_handler(event, context):
             ':pk1': {'S': 'REMINDER'}
         }
     )
-    items = response['Items']
-    print(items)
+
+def process_items(items, sns_client, ddb_client, topic):
     response_items = []
     for item in items:
         item_ulid = ulid.from_str(item['SK1']['S'])
         if not alert_is_due(item_ulid):
-            break
-        print('reminder!')
+            return response_items
         response_items.append(item)
-        continue
-        reminder = item['reminder']
-        payload = {}
-        payload['subject'] = reminder
-        payload['body'] = "Friendly reminder of the following: " + reminder
-        try:
-            lam.invoke(FunctionName='emailReminder',
-                       InvocationType='Event',
-                       Payload=json.dumps(payload))
-            payload = {
-                "number": "+12403937527",
-                "body": reminder
+        reminder = item['reminder']['S']
+
+        response = sns_client.publish(
+            TopicArn=topic,
+            Message=reminder,
+            Subject=f'Friendly reminder of the following: {reminder}'
+        )
+
+        ddb_client.delete_item(
+            TableName=table_name,
+            Key = {
+                'PK1': {'S': 'REMINDER'},
+                'SK1': {'S': str(item_ulid)}
             }
-            lam.invoke(FunctionName='textReminder',
-                       InvocationType='Event',
-                       Payload=json.dumps(payload))
-        except Exception as e:
-            print(e)
-            raise e
-        table.delete_item(Key = {'unixtimestamp': item['unixtimestamp']})
+        )
+
+def lambda_handler(event, context):
+    print(f'{topic=}')
+    response = get_latest_items(table_name, NUM_ITEMS)
+    
+    items = response['Items']
+    response_items = process_items(items, sns_client, ddb_client, topic)
+    
     return response_items

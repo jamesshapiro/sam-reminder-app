@@ -1,2 +1,4 @@
 src/python/*
 client_credentials.json
+parameters.json
+.sam-params

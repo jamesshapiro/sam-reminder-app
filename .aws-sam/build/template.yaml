@@ -9,6 +9,13 @@ Globals:
   Function:
     MemorySize: 128
     Timeout: 60
+Parameters:
+  NotificationEmail:
+    Type: String
+    Description: Recipient e-mail address
+  NotificationPhone:
+    Type: String
+    Description: Recipient phone number
 Resources:
   CreateReminderFunction:
     Type: AWS::Serverless::Function
@@ -38,12 +45,15 @@ Resources:
       Runtime: python3.8
       Policies:
       - AmazonDynamoDBFullAccess
+      - AmazonSNSFullAccess
       Layers:
       - Ref: ULIDLayer
       Environment:
         Variables:
           REMINDERS_DDB_TABLE:
             Ref: RemindersDDBTable
+          REMINDERS_TOPIC:
+            Ref: RemindersTopic
       Events:
         CheckForReminders:
           Type: Schedule
@@ -86,6 +96,16 @@ Resources:
       - python3.8
       LicenseInfo: MIT
       RetentionPolicy: Retain
+  RemindersTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Protocol: email
+        Endpoint:
+          Ref: NotificationEmail
+      - Protocol: sms
+        Endpoint:
+          Ref: NotificationPhone
 Outputs:
   ULIDLayer:
     Value:
