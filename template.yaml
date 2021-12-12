@@ -14,7 +14,7 @@ Resources:
   CreateReminderFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/reminders-app-code/
+      CodeUri: src/reminder-app-code/
       Handler: create_reminder.lambda_handler
       Runtime: python3.8
       # TODO: narrow this
@@ -33,6 +33,26 @@ Resources:
             Method: post
             #Auth:
             #  ApiKeyRequired: true
+
+  SendRemindersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/reminder-app-code/
+      Handler: send_reminders.lambda_handler
+      Runtime: python3.8
+      # TODO: narrow this
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Layers:
+        - !Ref ULIDLayer
+      Environment:
+        Variables:
+          REMINDERS_DDB_TABLE: !Ref RemindersDDBTable
+      Events:
+        CheckForReminders:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
 
   CreateReminderFunctionLogGroup:
     Type: AWS::Logs::LogGroup

@@ -55,18 +55,18 @@ def lambda_handler(event, context):
     message = f'Remind James of the following: "{reminder_content}" at {readable_reminder_time}. {time_content=}. {curr_unix_time=}'
 
     if curr_unix_time > unix_time:
-        message += ' ***WARNING: REMINDER IS IN THE PAST!*** {unix_time} < {curr_unix_time}'
+        message += f' ***WARNING: REMINDER IS IN THE PAST!*** {unix_time} < {curr_unix_time}'
     
     dynamodb_client = boto3.client('dynamodb')
     table_name = os.environ['REMINDERS_DDB_TABLE']
 
-    curr_ulid = str(ulid.new())
+    reminder_ulid = str(ulid.from_timestamp(unix_time))
 
     response = dynamodb_client.put_item(
         TableName = table_name,
         Item={
-            'PK1': {'S': curr_ulid},
-            'SK1': {'S': curr_ulid},
+            'PK1': {'S': 'REMINDER'},
+            'SK1': {'S': reminder_ulid},
             'reminder': {'S': reminder_content}
         }
     )

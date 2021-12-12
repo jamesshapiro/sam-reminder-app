@@ -30,6 +30,25 @@ Resources:
           Properties:
             Path: /remind/
             Method: post
+  SendRemindersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: SendRemindersFunction
+      Handler: send_reminders.lambda_handler
+      Runtime: python3.8
+      Policies:
+      - AmazonDynamoDBFullAccess
+      Layers:
+      - Ref: ULIDLayer
+      Environment:
+        Variables:
+          REMINDERS_DDB_TABLE:
+            Ref: RemindersDDBTable
+      Events:
+        CheckForReminders:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
   CreateReminderFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
