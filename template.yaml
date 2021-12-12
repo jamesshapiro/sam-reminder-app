@@ -35,13 +35,21 @@ Resources:
         Variables:
           REMINDERS_DDB_TABLE: !Ref RemindersDDBTable
       Events:
-        ReminderAPI:
+        CreateReminderAPIWithKeyRequired:
           Type: Api
           Properties:
+            RestApiId: !Ref CreateReminderApi
             Path: /remind/
             Method: post
             Auth:
               ApiKeyRequired: true
+
+  CreateReminderApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        ApiKeyRequired: true
 
   CreateReminderApiKey:
     Type: AWS::ApiGateway::ApiKey
@@ -52,7 +60,15 @@ Resources:
     Type: AWS::ApiGateway::UsagePlan
     Properties:
       ApiStages:
-        - ApiId: !Ref ReminderAPI
+        - ApiId: !Ref CreateReminderApi
+          Stage: 'Prod'
+
+  CreateReminderUsagePlanKeyAssocation:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref CreateReminderApiKey
+      KeyType: 'API_KEY'
+      UsagePlanId: !Ref CreateReminderUsagePlan
 
   SendRemindersFunction:
     Type: AWS::Serverless::Function
@@ -103,8 +119,6 @@ Resources:
           KeyType: 'HASH'
         - AttributeName: 'SK1'
           KeyType: 'RANGE'
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
 
   ULIDLayer:
     Type: AWS::Serverless::LayerVersion
@@ -133,4 +147,7 @@ Outputs:
     Description: ARN For AWS ULIDLayer
   ReminderApi:
     Description: 'API Gateway endpoint URL for Prod stage for Reminder function'
-    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/'
+    Value: !Sub 'https://${CreateReminderApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/'
+  APIKey:
+    Description: 'API Key for client use'
+    Value: !Ref CreateReminderApiKey

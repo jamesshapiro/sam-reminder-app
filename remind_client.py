@@ -79,12 +79,17 @@ def get_midnight(timezone):
 def upload_reminder(time, reminder, api_key, url, readable):
     payload = {
         'reminder': reminder,
-        'api_key': api_key,
         'time': time,
         'readable_reminder_time': readable
     }
-    response = requests.post(url, data=json.dumps(payload))
+    print(api_key)
+    headers = {
+        'x-api-key': api_key
+    }
+    #response = requests.post(url, data=json.dumps(payload))
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
     json_response = json.loads(response.text)
+    
     print(json_response['message'])
 
 def get_weekday_index(weekday):
