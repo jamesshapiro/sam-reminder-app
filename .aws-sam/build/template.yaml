@@ -24,7 +24,9 @@ Resources:
       Handler: create_reminder.lambda_handler
       Runtime: python3.8
       Policies:
-      - AmazonDynamoDBFullAccess
+      - DynamoDBWritePolicy:
+          TableName:
+            Ref: RemindersDDBTable
       Layers:
       - Ref: ULIDLayer
       Environment:
@@ -32,11 +34,25 @@ Resources:
           REMINDERS_DDB_TABLE:
             Ref: RemindersDDBTable
       Events:
-        Reminder:
+        ReminderAPI:
           Type: Api
           Properties:
             Path: /remind/
             Method: post
+            Auth:
+              ApiKeyRequired: true
+  CreateReminderApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Enabled: true
+  CreateReminderUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+      - ApiId:
+          Fn::GetAtt:
+          - ReminderAPI
+          - RestApiId
   SendRemindersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -44,8 +60,14 @@ Resources:
       Handler: send_reminders.lambda_handler
       Runtime: python3.8
       Policies:
-      - AmazonDynamoDBFullAccess
-      - AmazonSNSFullAccess
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: RemindersDDBTable
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::GetAtt:
+            - RemindersTopic
+            - TopicName
       Layers:
       - Ref: ULIDLayer
       Environment:
