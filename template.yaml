@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  reminders
+
+  Sample SAM Template for reminders app
+
+Globals:
+  Function:
+    MemorySize: 128
+    Timeout: 60
+
+Resources:
+  CreateReminderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/reminders-app-code/
+      Handler: create_reminder.lambda_handler
+      Runtime: python3.8
+      # TODO: narrow this
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Layers:
+        - !Ref ULIDLayer
+      Environment:
+        Variables:
+          REMINDERS_DDB_TABLE: !Ref RemindersDDBTable
+      Events:
+        Reminder:
+          Type: Api
+          Properties:
+            Path: /remind/
+            Method: post
+            #Auth:
+            #  ApiKeyRequired: true
+
+  CreateReminderFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Join:
+          - ''
+          - - /aws/lambda/
+            - Ref: CreateReminderFunction
+
+  RemindersDDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: 'PK1'
+          AttributeType: 'S'
+        - AttributeName: 'SK1'
+          AttributeType: 'S'
+      BillingMode: 'PAY_PER_REQUEST'
+      ContributorInsightsSpecification:
+        Enabled: true
+      KeySchema:
+        - AttributeName: 'PK1'
+          KeyType: 'HASH'
+        - AttributeName: 'SK1'
+          KeyType: 'RANGE'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  ULIDLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: ULIDLayer
+      Description: Reminder Dependencies
+      ContentUri: src/
+      CompatibleRuntimes:
+        - python3.7
+        - python3.8
+      LicenseInfo: MIT
+      RetentionPolicy: Retain
+
+Outputs:
+  ULIDLayer:
+    Value: !Ref ULIDLayer
+    Description: ARN For AWS ULIDLayer
+  ReminderApi:
+    Description: 'API Gateway endpoint URL for Prod stage for Reminder function'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/'
