@@ -55,6 +55,7 @@ Resources:
       Enabled: true
   CreateReminderUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    DependsOn: CreateReminderApiProdStage
     Properties:
       ApiStages:
       - ApiId:
@@ -83,6 +84,12 @@ Resources:
             Fn::GetAtt:
             - RemindersTopic
             - TopicName
+      - AmazonSNSFullAccess
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::GetAtt:
+            - RemindersTopic
+            - TopicName
       Layers:
       - Ref: ULIDLayer
       Environment:
@@ -91,6 +98,8 @@ Resources:
             Ref: RemindersDDBTable
           REMINDERS_TOPIC:
             Ref: RemindersTopic
+          REMINDERS_PHONE_NUMBER:
+            Ref: NotificationPhone
       Events:
         CheckForReminders:
           Type: Schedule
@@ -138,9 +147,6 @@ Resources:
       - Protocol: email
         Endpoint:
           Ref: NotificationEmail
-      - Protocol: sms
-        Endpoint:
-          Ref: NotificationPhone
 Outputs:
   ULIDLayer:
     Value:
@@ -150,7 +156,3 @@ Outputs:
     Description: API Gateway endpoint URL for Prod stage for Reminder function
     Value:
       Fn::Sub: https://${CreateReminderApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/
-  APIKey:
-    Description: API Key for client use
-    Value:
-      Ref: CreateReminderApiKey

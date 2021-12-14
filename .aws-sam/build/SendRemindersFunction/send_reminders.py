@@ -11,6 +11,7 @@ sns_client = boto3.client('sns')
 ddb_client = boto3.client('dynamodb')
 table_name = os.environ['REMINDERS_DDB_TABLE']
 topic = os.environ['REMINDERS_TOPIC']
+phone_number = os.environ['REMINDERS_PHONE_NUMBER']
 NUM_ITEMS = 100
 #email_reminder_function = os.environ['EMAIL_REMINDER_FUNCTION']
 #text_reminder_function = os.environ['TEXT_REMINDER_FUNCTION']
@@ -55,6 +56,9 @@ def process_items(items, sns_client, ddb_client, topic):
             Message=reminder,
             Subject=f'Friendly reminder of the following: {reminder}'
         )
+
+        publish_sns_response = sns_client.publish(PhoneNumber=phone_number, Message=reminder)
+        print(publish_sns_response)
 
         ddb_client.delete_item(
             TableName=table_name,

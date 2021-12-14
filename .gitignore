@@ -2,3 +2,5 @@ src/python/*
 client_credentials.json
 parameters.json
 .sam-params
+backup-client_credentials.json
+backup-samconfig.toml
