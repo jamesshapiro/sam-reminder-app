@@ -22,6 +22,7 @@ import maya
 import re
 import requests
 import sys
+import boto3
 from docopt import docopt
 
 """
@@ -82,14 +83,12 @@ def upload_reminder(time, reminder, api_key, url, readable):
         'time': time,
         'readable_reminder_time': readable
     }
-    print(api_key)
     headers = {
         'x-api-key': api_key
     }
     #response = requests.post(url, data=json.dumps(payload))
     response = requests.post(url, data=json.dumps(payload), headers=headers)
     json_response = json.loads(response.text)
-    
     print(json_response['message'])
 
 def get_weekday_index(weekday):
@@ -178,13 +177,35 @@ def repeat_reminder(time, reminder):
         print_time = int(time._epoch)
         upload_reminder(print_time, reminder, password, url, str(readable_timestamp(print_time)))
 
+def get_default_stack_id():
+    with open('.sam-params') as f:
+        sam_params = f.read().splitlines()
+    sam_params = [
+        line for line in sam_params if line.startswith('MyStackName')][0]
+    return sam_params.split('=')[1]
+
+def get_client_credentials():
+    cloudformation = boto3.resource('cloudformation')
+    stack_id = ''  # input('stack id?: ')
+    default_stack_id = get_default_stack_id()
+    if stack_id == '':
+        stack_id = default_stack_id
+    stack = cloudformation.Stack(stack_id)
+    outputs = stack.outputs
+    api_gateway_output = [
+        output for output in outputs if output['OutputKey'] == 'ReminderApi'][0]
+    url = api_gateway_output['OutputValue']
+    api_key_output = [
+        output for output in outputs if output['OutputKey'] == 'APIKeyValue'][0]
+    api_key = api_key_output['OutputValue']
+    timezone = 'US/Eastern'
+    return url, api_key, timezone
+
+        
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='Reminders 0.1')
-    with open('./client_credentials.json') as f:
-        json_data = json.load(f)
-    api_key = json_data['api_key']
-    url = json_data['url']
-    timezone = json_data['timezone']
+    json_data = get_client_credentials()
+    url, api_key, timezone = get_client_credentials()
     reminder = arguments['REMINDER']
     midnight = get_midnight(timezone)
     time = parse_time(arguments['TIME'], midnight)
