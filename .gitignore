@@ -4,3 +4,4 @@ parameters.json
 .sam-params
 backup-client_credentials.json
 backup-samconfig.toml
+.aws-sam/build*
