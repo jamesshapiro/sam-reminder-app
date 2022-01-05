@@ -20,12 +20,8 @@ NUM_ITEMS = 100
 
 def alert_is_due(item_ulid):
     curr_unix_time = int(str(time.time()).split(".")[0])
-    print(f'{curr_unix_time=}')
-    print(f'{item_ulid=}')
     curr_unix_ulid = ulid.from_timestamp(curr_unix_time)
-    print(f'{curr_unix_ulid=}')
     is_elapsed = item_ulid < curr_unix_ulid
-    print(f'{is_elapsed=}')
     return is_elapsed
 
 def get_latest_items(table_name, num_items):
@@ -54,12 +50,10 @@ def process_items(items, sns_client, ddb_client, topic):
         response = sns_client.publish(
             TopicArn=topic,
             Message=reminder,
-            Subject=f'Friendly reminder of the following: {reminder}'
+            Subject=f'REMINDER: {reminder}'
         )
 
         publish_sns_response = sns_client.publish(PhoneNumber=phone_number, Message=reminder)
-        print(publish_sns_response)
-
         ddb_client.delete_item(
             TableName=table_name,
             Key = {
