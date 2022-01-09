@@ -178,7 +178,8 @@ def repeat_reminder(time, reminder):
         upload_reminder(print_time, reminder, password, url, str(readable_timestamp(print_time)))
 
 def get_default_stack_id():
-    with open('.sam-params') as f:
+    home_dir = '/home/james' if sys.platform == 'linux' else '/Users/jamesshapiro'
+    with open(f'{home_dir}/code/sam-reminders-app/.sam-params') as f:
         sam_params = f.read().splitlines()
     sam_params = [
         line for line in sam_params if line.startswith('MyStackName')][0]
