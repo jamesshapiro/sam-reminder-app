@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   reminders
@@ -58,17 +58,17 @@ Resources:
 
   CreateReminderUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    DependsOn: "CreateReminderApiProdStage"
+    DependsOn: 'CreateReminderApiProdStage'
     Properties:
       ApiStages:
         - ApiId: !Ref CreateReminderApi
-          Stage: "Prod"
+          Stage: 'Prod'
 
   CreateReminderUsagePlanKeyAssocation:
     Type: AWS::ApiGateway::UsagePlanKey
     Properties:
       KeyId: !Ref CreateReminderApiKey
-      KeyType: "API_KEY"
+      KeyType: 'API_KEY'
       UsagePlanId: !Ref CreateReminderUsagePlan
 
   SendRemindersFunction:
@@ -81,9 +81,6 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RemindersDDBTable
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt RemindersTopic.TopicName
-        - AmazonSNSFullAccess
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt RemindersTopic.TopicName
       Layers:
@@ -104,7 +101,7 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Join:
-          - ""
+          - ''
           - - /aws/lambda/
             - Ref: CreateReminderFunction
 
@@ -112,18 +109,18 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-        - AttributeName: "PK1"
-          AttributeType: "S"
-        - AttributeName: "SK1"
-          AttributeType: "S"
-      BillingMode: "PAY_PER_REQUEST"
+        - AttributeName: 'PK1'
+          AttributeType: 'S'
+        - AttributeName: 'SK1'
+          AttributeType: 'S'
+      BillingMode: 'PAY_PER_REQUEST'
       ContributorInsightsSpecification:
         Enabled: true
       KeySchema:
-        - AttributeName: "PK1"
-          KeyType: "HASH"
-        - AttributeName: "SK1"
-          KeyType: "RANGE"
+        - AttributeName: 'PK1'
+          KeyType: 'HASH'
+        - AttributeName: 'SK1'
+          KeyType: 'RANGE'
 
   ULIDLayer:
     Type: AWS::Serverless::LayerVersion
@@ -151,7 +148,7 @@ Resources:
   ValueFuncExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      Path: "/"
+      Path: '/'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       AssumeRolePolicyDocument:
@@ -166,7 +163,7 @@ Resources:
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: apigateway:GET
@@ -195,7 +192,7 @@ Resources:
       Handler: index.lambda_handler
       Runtime: python3.9
       Timeout: 30
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${ValueFuncExecutionRole}"
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ValueFuncExecutionRole}'
   GetApiKeyValue:
     Type: Custom::LambdaCallout
     Properties:
@@ -207,8 +204,8 @@ Outputs:
     Value: !Ref ULIDLayer
     Description: ARN For AWS ULIDLayer
   ReminderApi:
-    Description: "API Gateway endpoint URL for Prod stage for Reminder function"
-    Value: !Sub "https://${CreateReminderApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/"
+    Description: 'API Gateway endpoint URL for Prod stage for Reminder function'
+    Value: !Sub 'https://${CreateReminderApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/remind/'
   APIKeyValue:
-    Description: "The actual API Key Value"
+    Description: 'The actual API Key Value'
     Value: !GetAtt GetApiKeyValue.Data
