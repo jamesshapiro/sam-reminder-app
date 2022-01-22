@@ -83,6 +83,7 @@ Resources:
             TableName: !Ref RemindersDDBTable
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt RemindersTopic.TopicName
+        - AmazonSNSFullAccess
       Layers:
         - !Ref ULIDLayer
       Environment:
