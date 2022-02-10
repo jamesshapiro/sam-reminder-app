@@ -205,7 +205,6 @@ def get_client_credentials():
         
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='Reminders 0.1')
-    json_data = get_client_credentials()
     url, api_key, timezone = get_client_credentials()
     reminder = arguments['REMINDER']
     midnight = get_midnight(timezone)
