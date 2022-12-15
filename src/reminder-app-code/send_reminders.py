@@ -6,7 +6,6 @@ import json
 import os
 import ulid
 
-lam = boto3.client('lambda')
 sns_client = boto3.client('sns')
 ddb_client = boto3.client('dynamodb')
 table_name = os.environ['REMINDERS_DDB_TABLE']
@@ -50,7 +49,7 @@ def process_items(items, sns_client, ddb_client, topic):
         response = sns_client.publish(
             TopicArn=topic,
             Message=reminder,
-            Subject=f'REMINDER: {reminder}'
+            Subject=f'REMINDER: {reminder[:90]}'
         )
 
         publish_sns_response = sns_client.publish(PhoneNumber=phone_number, Message=reminder)
